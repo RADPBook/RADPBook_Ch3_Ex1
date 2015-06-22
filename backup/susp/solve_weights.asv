@@ -1,0 +1,29 @@
+%%
+% (\partial phi_1/ \partial x)
+% ...
+% (\partial phi_q/ \partial x)
+%
+
+w = [508 115.4 239 4630];
+X = [];
+Y = [];
+
+for x1 = -1:.2:1
+    for x2 = -2:.4:2
+        for x3 = -1:.2:1
+            for x4 = -1:0.2:1
+                dP = dPhi([x1 x2 x3 x4]);
+                
+                u = - 1/2 * inv(R) * B' * dP' * w;
+                
+                X = [X;
+                    (dP*(A*[x1;x2;x3;x4]+B*u))'];
+                
+                Y = [Y; 1000*x1*x1 + u' * R * u];
+                
+            end
+        end
+    end
+end
+
+w = X\Y % update the weights
