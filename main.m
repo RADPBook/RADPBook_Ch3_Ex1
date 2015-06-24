@@ -35,16 +35,19 @@ end
 % Online Off-Policy Learning. Solve the matrix Ax = B 
 
 w = zeros(PsiLength,1);
-w(1) = 1;
 
-for i = 1:1%IterMax
-	A = [Phi -2*r*PsiU+2*r*PsiPsi*kron(w,ones(PsiLength))];
-    rank(A)
-	B = -(CostQ + PsiPsi*kron(w,w));
+for i = 1:IterMax
+	A = [Phi -2*r*PsiU+2*r*PsiPsi*kron(w,eye(PsiLength))];
+    B = -(CostQ + PsiPsi*kron(w,w));
 	pw = A\B;
-  	p = pw(1:PhiLength)'
+  	p = pw(1:PhiLength);
 	w = pw(PhiLength+1:end);
 end
 
+
+[tt,yy] = ode45(@(t,x) simpleSysWrapper(t,x,w), [0,10], [-0.2,2,-0.1,4])
+[tt0,yy0] = ode45(@(t,x) simpleSysWrapper(t,x,w*0), [0,10], [-0.2,2,-0.1,4])
+%%
+plot(tt,yy(:,1),tt0,yy0(:,2))
 
 
