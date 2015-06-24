@@ -4,6 +4,10 @@ PsiPsi = [];
 PsiU = [];
 Phi = [];
 CostQ = [];
+x_save = []; % Keep track of the states
+t_save = []; % Keep track of the time
+
+currentTime = 0; % Indicating the current time throught the simulation
 
 PhiLength = numel(Phi_fun(zeros(1,4)));
 PsiLength = numel(Psi_fun(zeros(1,4)));
@@ -17,7 +21,7 @@ X = [1,.3,1,-.2,zeros(1,PsiLength^2+PsiLength+1)];
 
 T = 0.01; % Length for each time interval
 
-% Data Collection
+%% Online Data Collection
 for i = 1:N	
 	[t,X] = ode45(@adpSysWrapper, ...
 		          [i-1,i]*T, ...
@@ -30,9 +34,14 @@ for i = 1:N
 		      X(end,4 + PsiLength^2 + (1:PsiLength))];       %#ok<AGROW>
 	CostQ = [CostQ; 
 		      X(end,end)];			                         %#ok<AGROW>
+    t_save = [t_save; 
+              t(:)];                                         %#ok<AGROW>
+    x_save = [x_save; 
+              X(:,1:4)];                                     %#ok<AGROW>
+    currentTime = t_save(end);
 end
 
-% Online Off-Policy Learning. Solve the matrix Ax = B 
+% Off-Policy Learning. Solve the matrix A*pw = B 
 
 w = zeros(PsiLength,1);
 
@@ -45,9 +54,29 @@ for i = 1:IterMax
 end
 
 
-[tt,yy] = ode45(@(t,x) simpleSysWrapper(t,x,w), [0,10], [-0.2,2,-0.1,4])
-[tt0,yy0] = ode45(@(t,x) simpleSysWrapper(t,x,w*0), [0,10], [-0.2,2,-0.1,4])
+%% Terminate exploration noise but keep appying the inital gains
+
+
+%% Post learning phase
+
+currentStates = x_save(end,:);
+[t,y] = ode45(@(t,x) simpleSysWrapper(t,x,w), ...
+              currentTime+[0,5], ...
+              currentStates);
+t_save = [t_save
+          t(:)];
+x_save = [x_save
+          y(:,1:4)];
+
+[t0,y0] = ode45(@(t,x) simpleSysWrapper(t,x,w*0), ...
+                                        currentTime+[0,5], ...
+                                        currentStates);
 %%
-plot(tt,yy(:,1),tt0,yy0(:,2))
+plot(t_save,x_save(:,1),t0, y0(:,1))
+%legend('learned', 'unlearned')
+
+%%
+%plot(tt,yy(:,2),tt0,yy0(:,2))
+%legend('learned', 'unlearned')
 
 
