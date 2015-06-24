@@ -72,11 +72,14 @@ x_save = [x_save
                                         currentTime+[0,5], ...
                                         currentStates);
 %%
-plot(t_save,x_save(:,1),t0, y0(:,1))
-%legend('learned', 'unlearned')
+plot(t_save,x_save(:,1),t0, y0(:,1), 'r--', 'LineWidth', 2)
+xlabel('Time (sec)')
+legend('x_b (Under ADP)', 'x_b (Unlearned)')
 
 %%
 %plot(tt,yy(:,2),tt0,yy0(:,2))
 %legend('learned', 'unlearned')
 
+
+%% Clean up
 

@@ -1,0 +1,38 @@
+% %ROA.m
+% 
+clear all
+close all
+clc
+%[x1,x2,z]=meshgrid([-1:0.1:1],[-.5:0.1:.5],[-2.5:0.25:2.5]);
+[x1,x2]=meshgrid([-2:0.1:2],[-2.7:0.1:2.7]);
+%[x1,z]=meshgrid([-1:0.1:1],[-2.5:0.25:2.5]);
+z=0;
+%v= 3.4086.*x1.*x1 + 0.0272.*x2.*x2 + 0.1400.*x1.*x2+1/2.*([-z-2.6962.*x1-1.0353.*x2-0.0427.*x1.*x2]).^2 ;
+v = w1'.*(Phi1(x1))
+%z=exp(-x.^2-y.^2);
+C=contour(x1,x2,v,1.3,'color',[0,0,1],'Linewidth',2);
+%clabel(C);
+title('Invariant set on the (\delta,w)- plane')
+xlabel('x_1:=\delta-\delta_0')
+ylabel('x_2:=w')
+hold on
+
+z0=x1.^2+0.5*x2.^2;
+contour(x1,x2,z0,3.1,'color',[0,0,1],'Linewidth',2);
+hold off
+
+text(1,1.8,'\Omega_0','Fontsize',16)
+text(0.3,0,'\Omega_{9*}','Fontsize',16)
+
+%%
+figure(2)
+z2=3.4086.*x1.^2+0.0272.*x2.^2+0.14.*x1.*x2;
+z3=x1.^2+x2.^2;
+
+surf(x1,x2,z2)
+hold on
+surf(x1,x2,z3)
+hold off
+title('V_9')
+xlabel('\delta-\delta_0')
+ylabel('w')
