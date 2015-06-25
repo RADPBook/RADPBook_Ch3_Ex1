@@ -1,5 +1,5 @@
 % Main Script
-
+close all
 PsiPsi = [];
 PsiU = [];
 Phi = [];
@@ -14,10 +14,10 @@ PsiLength = numel(Psi_fun(zeros(1,4)));
 
 r = 1;  % Weight on u
 
-N = 200;
+N = min(80,2*(PsiLength+PsiLength));
 IterMax = 20;  % Number of iterations
 
-X = [-0.5,0,0,0,zeros(1,PsiLength^2+PsiLength+1)];
+X = [0.1,-5,0.2,2,zeros(1,PsiLength^2+PsiLength+1)];
 
 T = 0.01; % Length for each time interval
 
@@ -45,22 +45,43 @@ end
 
 w = zeros(PsiLength,1);
 
-for i = 1:IterMax
-	A = [Phi -2*r*PsiU+2*r*PsiPsi*kron(w,eye(PsiLength))];
+for i = 1:IterMax	
+	A = [Phi -2*r*PsiU-2*r*PsiPsi*kron(w,eye(PsiLength))];
     B = -(CostQ + PsiPsi*kron(w,w));
 	pw = A\B;
   	p = pw(1:PhiLength);
 	w = pw(PhiLength+1:end);
+	if i == 1
+		p0 = p; % save the initial value function		
+	else
+		if norm(p-pp) <= 0.01
+			Iter = i;
+			break
+		end
+	end	
+	pp = p; %save the previous p for convergence check
 end
 
+%% Post learning
+% Terminate exploration noise but keep appying the inital gains until the 
+% states enters the region of attraction
 
-%% Terminate exploration noise but keep appying the inital gains
-
-
-%% Post learning phase
-
+% Compute the region of attraction
+D = getRegionOfAttraction(p);
+% Keep checking if state is in the region of attraction
 currentStates = x_save(end,:);
-[t,y] = ode45(@(t,x) simpleSysWrapper(t,x,w), ...
+while  ~isInRegionOfAttraction(currentStates,p,D);
+	[t,y] = ode45(@(t,x) simpleSysWrapper(t,x,w*0), ...
+                                        currentTime+[0,0.1], ...
+                                        currentStates);
+     t_save = [t_save; t];
+	 x_save = [x_save; y];
+	 currentStates = x_save(end,:);	 
+	 currentTime = t_save(end);
+end
+
+%% Update controller and finish the rest of the simulation
+[t,y] = ode45(@(t,x) simpleSysWrapper(t,x,-w), ...
               currentTime+[0,5], ...
               currentStates);
 t_save = [t_save
@@ -68,35 +89,112 @@ t_save = [t_save
 x_save = [x_save
           y(:,1:4)];
 
+% Also compare with unlearned performance
 [t0,y0] = ode45(@(t,x) simpleSysWrapper(t,x,w*0), ...
                                         currentTime+[0,5], ...
                                         currentStates);
-%%
+
+%% Plotting results
+% Create figure folder
+if exist('simFigures','dir') == 0
+	mkdir('simFigures');
+end
+
+%% Figure 1 Time course
 figure(1)
-subplot(221)
+% subplot(221)
 plot(t_save,x_save(:,1),t0, y0(:,1), 'r--', 'LineWidth', 2)
 xlabel('Time (sec)')
-legend('x_b (Under ADP)', 'x_b (Unlearned)')
-%
-subplot(222)
-plot(t_save,x_save(:,2),t0, y0(:,2), 'r--', 'LineWidth', 2)
-xlabel('Time (sec)')
-legend('x_b (Under ADP)', 'x_b (Unlearned)')
-%
-subplot(223)
-plot(t_save,x_save(:,3),t0, y0(:,3), 'r--', 'LineWidth', 2)
-xlabel('Time (sec)')
-legend('x_b (Under ADP)', 'x_b (Unlearned)')
-%
-subplot(224)
-plot(t_save,x_save(:,4),t0, y0(:,4), 'r--', 'LineWidth', 2)
-xlabel('Time (sec)')
-legend('x_b (Under ADP)', 'x_b (Unlearned)')
+legend1 = legend('x_b (Under ADP)', 'x_b (Unlearned)');
+set(legend1,'FontSize',12);
+xlim([0,5])
+% %
+% subplot(222)
+% plot(t_save,x_save(:,2),t0, y0(:,2), 'r--', 'LineWidth', 2)
+% xlabel('Time (sec)')
+% legend('x_b (Under ADP)', 'd/dt x_b (Unlearned)')
+% %
+% subplot(223)
+% plot(t_save,x_save(:,3),t0, y0(:,3), 'r--', 'LineWidth', 2)
+% xlabel('Time (sec)')
+% legend('x_b (Under ADP)', 'x_w (Unlearned)')
+% %
+% subplot(224)
+% plot(t_save,x_save(:,4),t0, y0(:,4), 'r--', 'LineWidth', 2)
+% xlabel('Time (sec)')
+% legend('x_b (Under ADP)', 'd/dt x_w (Unlearned)')
 
-%%
-%plot(tt,yy(:,2),tt0,yy0(:,2))
-%legend('learned', 'unlearned')
+% Create textarrow
+annotation('textarrow',[0.366326530612245 0.268112244897959],...
+	[0.681349206349206 0.743253968253969],'String',{'Controller Updated'},...
+	'FontSize',12);
+
+print('.\simFigures\Ch3_ex1_fig1_x','-depsc');
+%% Figure 2
+% Plot the value function surfaces and compare the inital one and the 
+% optimized one
+xxb = -0.5:0.05:0.5;
+xxw = -0.2:0.02:0.2;
+[XX,YY] = meshgrid(xxb, xxw);
+VV = zeros(size(XX));
+VV0 = VV;
+
+for i = 1:numel(XX)
+	VV0(i) = p0'*Phi_fun([XX(i),0,YY(i),0])'; 
+	VV(i) = p'*Phi_fun([XX(i),0,YY(i),0])'; 
+end
+
+figure(2)
+surf(XX,YY,VV0)
+hold on
+surf(XX,YY,VV)
+hold off
+
+xlabel('x_b', 'FontSize', 14);
+ylabel('x_w', 'FontSize', 14);
+
+% Create textarrow
+annotation('textarrow',[0.821428571428571 0.889285714285713],...
+	[0.821759259259259 0.652380952380954],'String','V_0(x_b,0,x_w,0)',...
+	'FontSize',12);
+
+% Create textarrow
+annotation('textarrow',[0.833928571428571 0.868148148148148],...
+	[0.157142857142857 0.336798336798337],'String', ...
+	['V_' num2str(Iter-1) '(x_b,0,x_w,0)'],...
+	'FontSize',12);
+
+print('.\simFigures\Ch3_ex1_fig2_v','-depsc')
+
+%% Figure 3 -- Regin of Attraction
+indexToRemove = [];
+
+xxb = -0.5:0.05:0.5;
+xxw = -0.2:0.02:0.2;
+xxdb = -5:0.25:5;
+
+[XX,YY,ZZ] = meshgrid(xxb, xxdb, xxw);
+
+for i = 1:numel(XX)
+	if ~isInRegionOfAttraction([XX(i) YY(i) ZZ(i) 0],p,D-0.2)
+	   indexToRemove = [indexToRemove i];
+	end	
+end
+XX(indexToRemove) = [];
+YY(indexToRemove) = [];
+ZZ(indexToRemove) = [];
 
 
-%% Clean up
 
+DT = delaunayTriangulation(XX(:),YY(:),ZZ(:));
+k = convexHull(DT);
+
+figure(3)
+trisurf(k,DT.Points(:,1),DT.Points(:,2),DT.Points(:,3))
+%plot(XX(k), YY(k), 'r-', XX(:), YY(:), 'b.')
+%xlim([-0.5 0.5])
+%ylim([-0.2 0.2])
+
+%% clean up
+% cleanup
+	

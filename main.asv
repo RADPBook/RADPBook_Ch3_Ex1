@@ -14,10 +14,10 @@ PsiLength = numel(Psi_fun(zeros(1,4)));
 
 r = 1;  % Weight on u
 
-N = 100;
+N = min(80,2*(PsiLength+PsiLength));
 IterMax = 20;  % Number of iterations
 
-X = [.4,0,.3,0,zeros(1,PsiLength^2+PsiLength+1)];
+X = [0.1,-5,0.2,2,zeros(1,PsiLength^2+PsiLength+1)];
 
 T = 0.01; % Length for each time interval
 
@@ -46,21 +46,33 @@ end
 w = zeros(PsiLength,1);
 
 for i = 1:IterMax
-	A = [Phi -2*r*PsiU+2*r*PsiPsi*kron(w,eye(PsiLength))];
+	A = [Phi -2*r*PsiU-2*r*PsiPsi*kron(w,eye(PsiLength))];
     B = -(CostQ + PsiPsi*kron(w,w));
 	pw = A\B;
   	p = pw(1:PhiLength);
 	w = pw(PhiLength+1:end);
 end
 
+%% Post learning
+% Terminate exploration noise but keep appying the inital gains until the 
+% states enters the region of attraction
 
-%% Terminate exploration noise but keep appying the inital gains
-
-
-%% Post learning phase
-
+% Compute the region of attraction
+D = getRegionOfAttraction(p);
+% Keep checking if state is in the region of attraction
 currentStates = x_save(end,:);
-[t,y] = ode45(@(t,x) simpleSysWrapper(t,x,w), ...
+while  ~isInRegionOfAttraction(currentStates,p,D);
+	[t,y] = ode45(@(t,x) simpleSysWrapper(t,x,w*0), ...
+                                        currentTime+[0,0.1], ...
+                                        currentStates);
+     t_save = [t_save; t];
+	 x_save = [x_save; y];
+	 currentStates = x_save(end,:);	 
+	 currentTime = t_save(end);
+end
+
+%% Update controller and finish the rest of the simulation
+[t,y] = ode45(@(t,x) simpleSysWrapper(t,x,-w), ...
               currentTime+[0,5], ...
               currentStates);
 t_save = [t_save
@@ -68,10 +80,12 @@ t_save = [t_save
 x_save = [x_save
           y(:,1:4)];
 
+% Also compare with unlearned performance
 [t0,y0] = ode45(@(t,x) simpleSysWrapper(t,x,w*0), ...
                                         currentTime+[0,5], ...
                                         currentStates);
-%%
+
+%% Plotting results
 figure(1)
 subplot(221)
 plot(t_save,x_save(:,1),t0, y0(:,1), 'r--', 'LineWidth', 2)
@@ -99,4 +113,8 @@ legend('x_b (Under ADP)', 'x_b (Unlearned)')
 
 
 %% Clean up
+save simResults.mat 
+
+clear A D Phi PsiPsi X r t_save y B IterMax PhiLength PsiU currentStates  p              t              w              y0             
+CostQ          N              PsiLength      T              currentTime    pw             t0             x_save      
 

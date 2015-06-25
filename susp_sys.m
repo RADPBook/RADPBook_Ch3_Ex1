@@ -16,9 +16,9 @@ kn = ks/10;  % N/m
 
 % System Dynamics
 dx1 = x2;
-dx2 = -(ks*(x1-x3)+kn*(x1-x3)^3)/mb-(bs*(x2-x4)-10000*u)/mb;
+dx2 = -(ks*(x1-x3)+kn*(x1-x3)^3)/mb - (bs*(x2-x4)-10000*u)/mb;
 dx3 = x4;
-dx4 =  (ks*(x1-x3)+kn*(x1-x3)^3)/mw +(bs*(x2-x4)-kt*x3-10000*u)/mw;
+dx4 =  (ks*(x1-x3)+kn*(x1-x3)^3)/mw + (bs*(x2-x4)-kt*x3-10000*u)/mw;
 
 % Combine the output
 dx = [dx1;
