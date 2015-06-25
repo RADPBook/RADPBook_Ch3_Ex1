@@ -169,14 +169,14 @@ print('.\simFigures\Ch3_ex1_fig2_v','-depsc')
 %% Figure 3 -- Regin of Attraction
 indexToRemove = [];
 
-xxb = -0.5:0.05:0.5;
-xxw = -0.2:0.02:0.2;
-xxdb = -5:0.25:5;
+xxb = linspace(-0.5,0.5,30);
+xxw = linspace(-0.2,0.2,30);
+xxdb = linspace(-5,5,30);
 
 [XX,YY,ZZ] = meshgrid(xxb, xxdb, xxw);
 
 for i = 1:numel(XX)
-	if ~isInRegionOfAttraction([XX(i) YY(i) ZZ(i) 0],p,D-0.2)
+	if ~isInRegionOfAttraction([XX(i) YY(i) ZZ(i) 0],p,D)
 	   indexToRemove = [indexToRemove i];
 	end	
 end
@@ -184,17 +184,31 @@ XX(indexToRemove) = [];
 YY(indexToRemove) = [];
 ZZ(indexToRemove) = [];
 
-
-
 DT = delaunayTriangulation(XX(:),YY(:),ZZ(:));
 k = convexHull(DT);
 
 figure(3)
-trisurf(k,DT.Points(:,1),DT.Points(:,2),DT.Points(:,3))
-%plot(XX(k), YY(k), 'r-', XX(:), YY(:), 'b.')
-%xlim([-0.5 0.5])
-%ylim([-0.2 0.2])
+trisurf(k,DT.Points(:,1),DT.Points(:,2),DT.Points(:,3), ...
+    'EdgeAlpha', 0.2, ...
+    'FaceAlpha', 0.2)
+xlim([-0.5 0.5])
+ylim([-5 5])
+zlim([-0.2 0.2])
+% Create textbox
+annotation('textbox',...
+    [0.453 0.168 0.07 0.017],...
+    'String','\Omega',...
+    'LineStyle','none',...
+    'FontSize',12,...
+    'FitBoxToText','off');
+% Create textarrow
+annotation('textarrow',[0.735714285714286 0.68],...
+    [0.85952380952381 0.72],'String',{ '\Omega_i estimate'},'FontSize',12);
+xlabel('x_b', 'FontSize', 14);
+ylabel('x''_b', 'FontSize', 14);
+zlabel('x_w', 'FontSize', 14);
 
+print('.\simFigures\Ch3_ex1_fig3_Omega','-depsc')
 %% clean up
-% cleanup
+cleanup
 	
