@@ -14,10 +14,10 @@ PsiLength = numel(Psi_fun(zeros(1,4)));
 
 r = 1;  % Weight on u
 
-N = 100;
-IterMax = 10;  % Number of iterations
+N = 200;
+IterMax = 20;  % Number of iterations
 
-X = [1,.3,1,-.2,zeros(1,PsiLength^2+PsiLength+1)];
+X = [-0.5,0,0,0,zeros(1,PsiLength^2+PsiLength+1)];
 
 T = 0.01; % Length for each time interval
 
@@ -72,7 +72,24 @@ x_save = [x_save
                                         currentTime+[0,5], ...
                                         currentStates);
 %%
+figure(1)
+subplot(221)
 plot(t_save,x_save(:,1),t0, y0(:,1), 'r--', 'LineWidth', 2)
+xlabel('Time (sec)')
+legend('x_b (Under ADP)', 'x_b (Unlearned)')
+%
+subplot(222)
+plot(t_save,x_save(:,2),t0, y0(:,2), 'r--', 'LineWidth', 2)
+xlabel('Time (sec)')
+legend('x_b (Under ADP)', 'x_b (Unlearned)')
+%
+subplot(223)
+plot(t_save,x_save(:,3),t0, y0(:,3), 'r--', 'LineWidth', 2)
+xlabel('Time (sec)')
+legend('x_b (Under ADP)', 'x_b (Unlearned)')
+%
+subplot(224)
+plot(t_save,x_save(:,4),t0, y0(:,4), 'r--', 'LineWidth', 2)
 xlabel('Time (sec)')
 legend('x_b (Under ADP)', 'x_b (Unlearned)')
 

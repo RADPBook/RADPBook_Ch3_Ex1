@@ -2,7 +2,7 @@ function dX = adpSysWrapper(t,X)
  
 % System dynamics part
 x = X(1:4);
-u = sum(0.1*sin([1 3 7 11 13 15]*t));
+u = sum(0.2*sin([1 3 7 11 13 15]*t));
 
 dx = susp_sys(x,u);       % dx as the first 1-4 states of the wrapper
 
