@@ -47,7 +47,13 @@ w = zeros(PsiLength,1);
 
 for i = 1:IterMax	
 	A = [Phi -2*r*PsiU-2*r*PsiPsi*kron(w,eye(PsiLength))];
-    B = -(CostQ + PsiPsi*kron(w,w));
+    % Note: To be consistent with the notations in (Y Jiang &  ZP Jiang, 
+	% TNNLS 2014), the above line should be replaced with
+	% A = [Phi 2*r*PsiU-2*r*PsiPsi*kron(w,eye(PsiLength))];
+	% i.e., consider u = w'*phi, not u = -w'*psi
+	% In that case, the simpleSysWrapper should be called as
+	% >> simpleSysWrapper(t,x,-w)	
+	B = -(CostQ + PsiPsi*kron(w,w));
 	pw = A\B;
   	p = pw(1:PhiLength);
 	w = pw(PhiLength+1:end);
